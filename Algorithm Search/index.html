@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algorithm Visualizer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Algorithm Visualization</h1>
+
+        <!-- Display Random Array -->
+        <div class="array-container" id="array-container"></div>
+
+        <!-- Algorithm Selection Dropdown -->
+        <select id="algorithm-select">
+            <option value="linear-search">Linear Search</option>
+            <option value="exponential-search">Exponential Search</option>
+            <option value="selection-sort">Selection Sort</option>
+            <option value="quick-sort">Quick Sort</option>
+            <option value="binary-search-tree">Binary Search Tree</option>
+        </select>
+
+        <!-- Input for Target Value -->
+        <input type="number" id="search-value" placeholder="Enter target value to search">
+        <button id="start-search">Start Search</button>
+
+        <div id="result"></div>
+
+        <!-- Step-by-Step Button -->
+        <button id="next-button" class="next-button" disabled>Next</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

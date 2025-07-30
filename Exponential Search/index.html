@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exponential Search Visualization</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for the visualization */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* cool-gray-50 */
+        }
+        .cell {
+            transition: all 0.5s ease-in-out;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+        /* Style for the main pointer in the exponential phase */
+        .highlight-exp-pointer {
+            background-color: #fbbf24; /* amber-400 */
+            color: #1f2937; /* gray-800 */
+            transform: translateY(-10px) scale(1.1);
+            border-color: #f59e0b; /* amber-500 */
+        }
+        /* Style for the sub-array range found for binary search */
+        .highlight-binary-range {
+            background-color: #dbeafe; /* blue-100 */
+            border-color: #93c5fd; /* blue-300 */
+        }
+        /* Style for the binary search pointer (mid) */
+        .highlight-binary-pointer {
+            background-color: #60a5fa; /* blue-400 */
+            color: white;
+            transform: translateY(-10px) scale(1.1);
+            border-color: #3b82f6; /* blue-500 */
+        }
+        /* Style for the found element */
+        .highlight-found {
+            background-color: #4ade80; /* green-400 */
+            color: #1f2937; /* gray-800 */
+            transform: translateY(-10px) scale(1.2);
+            border-color: #22c55e; /* green-500 */
+        }
+         /* Style for discarded elements */
+        .discarded {
+            opacity: 0.4;
+            background-color: #e5e7eb; /* gray-200 */
+        }
+        #controls button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900">Exponential Search</h1>
+            <p class="mt-2 text-lg text-gray-600">A step-by-step interactive visualization</p>
+        </header>
+
+        <!-- Controls -->
+        <div id="controls" class="bg-white p-6 rounded-2xl shadow-lg mb-8 flex flex-wrap items-center justify-center gap-4">
+            <div class="flex-grow md:flex-grow-0">
+                <label for="array-input" class="font-medium text-gray-700 block mb-1">Sorted Array (comma-separated):</label>
+                <input type="text" id="array-input" class="w-full md:w-72 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="e.g., 2, 5, 8, 12, 16">
+            </div>
+             <div class="flex-grow md:flex-grow-0">
+                <label for="search-value" class="font-medium text-gray-700 block mb-1">Value to Find:</label>
+                <input type="number" id="search-value" class="w-full md:w-32 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="e.g., 16">
+            </div>
+            <div class="flex items-end h-full">
+                <button id="search-btn" class="w-full md:w-auto bg-blue-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-blue-700 transition duration-300 shadow">Search</button>
+            </div>
+             <div class="flex items-end h-full">
+                 <button id="random-btn" class="w-full md:w-auto bg-gray-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-gray-700 transition duration-300 shadow">Random Array</button>
+            </div>
+            <div class="flex items-end h-full">
+                 <button id="next-btn" class="w-full md:w-auto bg-green-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-green-700 transition duration-300 shadow" disabled>Next Step</button>
+            </div>
+        </div>
+
+        <!-- Visualization Area -->
+        <div id="array-container" class="mb-8 flex flex-wrap justify-center items-end gap-2 min-h-[80px]"></div>
+
+        <!-- Information Panels -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Explanation Panel -->
+            <div class="bg-white p-6 rounded-2xl shadow-lg">
+                <h3 class="text-2xl font-bold text-gray-900 mb-4">Step-by-Step Explanation</h3>
+                <div id="explanation-content" class="text-gray-700 space-y-2 text-lg">
+                    <p>Enter a sorted array or generate a random one, then provide a value to search for.</p>
+                </div>
+            </div>
+
+            <!-- Time Complexity Panel -->
+            <div class="bg-white p-6 rounded-2xl shadow-lg">
+                <h3 class="text-2xl font-bold text-gray-900 mb-4">Time Complexity</h3>
+                <div class="text-gray-700 space-y-3">
+                    <div>
+                        <p class="font-semibold text-lg">Best Case: <span class="font-mono bg-gray-100 text-green-600 px-2 py-1 rounded">O(1)</span></p>
+                        <p class="text-sm">The element is found at the first position.</p>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-lg">Average & Worst Case: <span class="font-mono bg-gray-100 text-red-600 px-2 py-1 rounded">O(log i)</span></p>
+                        <p class="text-sm">Where 'i' is the index of the element to be searched. In the worst case, i ≈ n, making it O(log n).</p>
+                    </div>
+                    <p class="mt-4 pt-4 border-t border-gray-200">Exponential Search works by finding a range where the element could be (O(log i)) and then running a binary search within that range (O(log i)). This makes it very efficient, especially for unbounded or extremely large arrays where the element is near the beginning.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // DOM Elements
+        const arrayContainer = document.getElementById('array-container');
+        const arrayInput = document.getElementById('array-input');
+        const searchValueInput = document.getElementById('search-value');
+        const searchBtn = document.getElementById('search-btn');
+        const randomBtn = document.getElementById('random-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const explanationContent = document.getElementById('explanation-content');
+
+        let animationSteps = [];
+        let currentStep = 0;
+        let currentArray = [];
+
+        // --- Core Logic ---
+
+        /**
+         * Parses the input string into a sorted integer array.
+         * @returns {number[] | null} An array of numbers or null if input is invalid.
+         */
+        function getArrayFromInput() {
+            const text = arrayInput.value.trim();
+            if (!text) {
+                // Using a custom modal instead of alert
+                showModal('Please enter an array.');
+                return null;
+            }
+            const arr = text.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+            
+            // Validate if sorted
+            for(let i = 0; i < arr.length - 1; i++) {
+                if (arr[i] > arr[i+1]) {
+                    showModal('The input array must be sorted in ascending order.');
+                    return null;
+                }
+            }
+            return arr;
+        }
+        
+        /**
+         * Generates a random sorted array.
+         */
+        function generateRandomArray() {
+            const size = Math.floor(Math.random() * 10) + 8; // Size between 8 and 17
+            let arr = [];
+            let current = Math.floor(Math.random() * 5) + 1;
+            for (let i = 0; i < size; i++) {
+                arr.push(current);
+                current += Math.floor(Math.random() * 10) + 2;
+            }
+            arrayInput.value = arr.join(', ');
+        }
+
+        /**
+         * Displays the array on the screen with appropriate styling.
+         * @param {number[]} arr - The array to display.
+         * @param {object} highlights - Object defining which cells to highlight.
+         */
+        function displayArray(arr, highlights = {}) {
+            arrayContainer.innerHTML = '';
+            arr.forEach((value, index) => {
+                const cell = document.createElement('div');
+                cell.className = 'cell relative flex items-center justify-center w-14 h-14 bg-white border-2 border-gray-300 rounded-lg text-lg font-semibold';
+                cell.textContent = value;
+                cell.dataset.index = index;
+
+                const indexLabel = document.createElement('span');
+                indexLabel.className = 'absolute -bottom-6 text-xs text-gray-500';
+                indexLabel.textContent = index;
+                cell.appendChild(indexLabel);
+
+                // Apply highlights based on the current step
+                if (highlights.expPointer === index) cell.classList.add('highlight-exp-pointer');
+                if (highlights.binaryRange && index >= highlights.binaryRange.start && index <= highlights.binaryRange.end) cell.classList.add('highlight-binary-range');
+                if (highlights.binaryPointer === index) cell.classList.add('highlight-binary-pointer');
+                if (highlights.found === index) cell.classList.add('highlight-found');
+                if (highlights.discarded && highlights.discarded.includes(index)) cell.classList.add('discarded');
+
+                arrayContainer.appendChild(cell);
+            });
+        }
+        
+        /**
+         * Toggles the state of UI controls during animation.
+         * @param {boolean} isAnimating - Whether the animation is active.
+         */
+        function setControlsState(isAnimating) {
+            searchBtn.disabled = isAnimating;
+            randomBtn.disabled = isAnimating;
+            arrayInput.disabled = isAnimating;
+            searchValueInput.disabled = isAnimating;
+            nextBtn.disabled = !isAnimating;
+        }
+
+        /**
+         * Main search function to set up and start the animation.
+         */
+        function startSearch() {
+            const arr = getArrayFromInput();
+            if (!arr) return;
+            currentArray = arr;
+
+            const searchValue = parseInt(searchValueInput.value);
+            if (isNaN(searchValue)) {
+                showModal('Please enter a valid number to search for.');
+                return;
+            }
+            
+            animationSteps = [];
+            exponentialSearch(arr, searchValue);
+            currentStep = 0;
+            setControlsState(true);
+            executeNextStep(); // Execute the first step automatically
+        }
+
+        /**
+         * Executes the current animation step.
+         */
+        function executeNextStep() {
+            if (currentStep >= animationSteps.length) {
+                setControlsState(false);
+                return;
+            }
+            const step = animationSteps[currentStep];
+            explanationContent.innerHTML = `<p>${step.explanation}</p>`;
+            displayArray(currentArray, step.highlights);
+            currentStep++;
+
+             // If this was the last step, disable the next button
+            if (currentStep >= animationSteps.length) {
+                setControlsState(false);
+            }
+        }
+
+        // --- Algorithm Implementation (to generate animation steps) ---
+
+        function exponentialSearch(arr, searchValue) {
+            const n = arr.length;
+            animationSteps.push({
+                explanation: `Starting Exponential Search for <b>${searchValue}</b>.`,
+                highlights: {}
+            });
+
+            // Step 1: Check the first element
+            if (arr[0] === searchValue) {
+                animationSteps.push({
+                    explanation: `Element found at the first position (index 0). Best case!`,
+                    highlights: { found: 0 }
+                });
+                return;
+            }
+            animationSteps.push({
+                explanation: `Check index 0. The value is ${arr[0]}. Not a match.`,
+                highlights: { expPointer: 0, discarded: [0] }
+            });
+
+            // Step 2: Find the range for binary search
+            let i = 1;
+            while (i < n && arr[i] <= searchValue) {
+                animationSteps.push({
+                    explanation: `Checking index ${i}. Since ${arr[i]} <= ${searchValue}, we will double the index for the next check.`,
+                    highlights: { expPointer: i, discarded: Array.from({length: i}, (_, k) => k) }
+                });
+                i = i * 2;
+            }
+            
+            const rangeStart = Math.floor(i / 2);
+            const rangeEnd = Math.min(i, n - 1);
+
+            animationSteps.push({
+                explanation: `The value at index ${rangeEnd} (${arr[rangeEnd]}) is greater than ${searchValue}. The element, if it exists, must be in the range [${rangeStart}, ${rangeEnd}].`,
+                highlights: { binaryRange: { start: rangeStart, end: rangeEnd } }
+            });
+            animationSteps.push({
+                explanation: `Now, performing Binary Search on this sub-array.`,
+                highlights: { binaryRange: { start: rangeStart, end: rangeEnd } }
+            });
+
+            // Step 3: Perform Binary Search on the found range
+            binarySearch(arr, rangeStart, rangeEnd, searchValue);
+        }
+
+        function binarySearch(arr, low, high, searchValue) {
+            let initialHighlights = { binaryRange: { start: low, end: high }};
+            
+            while (low <= high) {
+                let mid = Math.floor(low + (high - low) / 2);
+                let currentHighlights = { ...initialHighlights, binaryPointer: mid };
+
+                animationSteps.push({
+                    explanation: `Binary Search: Low is ${low}, High is ${high}. Middle is index ${mid} (value: ${arr[mid]}).`,
+                    highlights: currentHighlights
+                });
+
+                if (arr[mid] === searchValue) {
+                    animationSteps.push({
+                        explanation: `Element found at index <b>${mid}</b>!`,
+                        highlights: { found: mid }
+                    });
+                    return;
+                }
+
+                if (arr[mid] < searchValue) {
+                     animationSteps.push({
+                        explanation: `${arr[mid]} < ${searchValue}. The element must be in the right half. New Low is ${mid + 1}.`,
+                        highlights: { ...currentHighlights, discarded: [...(currentHighlights.discarded || []), ...Array.from({length: mid - low + 1}, (_, k) => k + low)] }
+                    });
+                    low = mid + 1;
+                } else {
+                     animationSteps.push({
+                        explanation: `${arr[mid]} > ${searchValue}. The element must be in the left half. New High is ${mid - 1}.`,
+                         highlights: { ...currentHighlights, discarded: [...(currentHighlights.discarded || []), ...Array.from({length: high - mid + 1}, (_, k) => k + mid)] }
+                    });
+                    high = mid - 1;
+                }
+            }
+            
+             animationSteps.push({
+                explanation: `Element <b>${searchValue}</b> not found in the array.`,
+                highlights: { discarded: Array.from({length: arr.length}, (_, k) => k) }
+            });
+        }
+        
+        // --- Modal ---
+        function showModal(message) {
+            // A simple replacement for alert()
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;';
+            modal.innerHTML = `
+                <div style="background: white; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); text-align: center;">
+                    <p style="margin-bottom: 1.5rem; font-size: 1.125rem;">${message}</p>
+                    <button id="modal-close-btn" style="background-color: #3b82f6; color: white; font-weight: 600; padding: 0.5rem 1.5rem; border-radius: 0.5rem;">OK</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            document.getElementById('modal-close-btn').onclick = () => {
+                document.body.removeChild(modal);
+            };
+        }
+
+
+        // --- Event Listeners ---
+        searchBtn.addEventListener('click', startSearch);
+        nextBtn.addEventListener('click', executeNextStep);
+        randomBtn.addEventListener('click', () => {
+             generateRandomArray();
+             const arr = getArrayFromInput();
+             if(arr) displayArray(arr);
+        });
+
+        // Initial setup
+        window.onload = () => {
+            generateRandomArray();
+            const arr = getArrayFromInput();
+            if(arr) {
+                currentArray = arr;
+                displayArray(arr);
+                searchValueInput.value = arr[Math.floor(Math.random() * arr.length)];
+            }
+        };
+
+    </script>
+</body>
+</html>
